@@ -11,7 +11,7 @@ class SendEmail:
     def run(self, data):
         # Configure API key authorization: api-key
         configuration = sib_api_v3_sdk.Configuration()
-        configuration.api_key['api-key'] = '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'
+        configuration.api_key['api-key'] = ''
 
         api_instance = sib_api_v3_sdk.TransactionalEmailsApi(
             sib_api_v3_sdk.ApiClient(configuration))
