@@ -1,0 +1,90 @@
+version: "3.9"
+
+services:
+  payment-app:
+    build: ./payment_app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - kafka
+    hostname: paymentapp
+    networks:
+      localstack1:
+        ipv4_address: 192.168.55.10
+  delivery-app:
+    build: ./delivery_app
+    ports:
+      - "8001:8001"
+    depends_on:
+      - db
+      - kafka
+    hostname: deliveryapp
+    networks:
+      localstack1:
+        ipv4_address: 192.168.55.11
+  db:
+    image: postgres:11
+    volumes:
+      - ~/data/payment_service/db:/var/lib/postgresql/data
+      - ./database/data.sql:/docker-entrypoint-initdb.d/data.sql
+    environment:
+      - PRODUCTION=false
+      - POSTGRES_HOST_AUTH_METHOD=trust
+      - PGDATA=/var/lib/pg_data
+    env_file:
+      - ./config/.env.dev
+    ports:
+      - "5435:5432"
+    hostname: postgresdb
+    networks:
+      localstack1:
+        ipv4_address: 192.168.55.12
+  email-app:
+    build: ./email_app
+    ports:
+      - "8002:8002"
+    depends_on:
+      - db
+      - kafka
+    hostname: emailapp
+    networks:
+      localstack1:
+        ipv4_address: 192.168.55.13
+  zookeeper:
+    image: 'bitnami/zookeeper:latest'
+    ports:
+      - '2181:2181'
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    hostname: zookeeper
+    networks:
+      localstack1:
+        ipv4_address: 192.168.55.14
+  kafka:
+    image: confluentinc/cp-kafka:7.0.1
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    hostname: kafka
+    networks:
+      localstack1:
+        ipv4_address: 192.168.55.15
+networks:
+  localstack1:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.55.0/24
+          gateway: 192.168.55.1

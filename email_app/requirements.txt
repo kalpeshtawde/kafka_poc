@@ -1,0 +1,2 @@
+confluent-kafka==1.8.2
+sib_api_v3_sdk
